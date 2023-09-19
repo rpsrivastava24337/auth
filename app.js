@@ -15,21 +15,15 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 mongoose.connect("mongodb://127.0.0.1/userDB", { useNewUrlParser: true })
 
-// const userSchema = new mongoose.Schema({ // set new mongoose schema for encryption
-//     email: String,
-//     password: String
-// });
-const userSchema ={ // set new mongoose schema for encryption
-      email: String,
-       password: String
-    };
+const userSchema = new mongoose.Schema({ // set new mongoose schema for encryption
+    email: String,
+    password: String
+});
 
-// const secret ="abcdefghijklmnopqrstuvwxyz"
-// userSchema.plugin(encrypt,{secret:secret,encryptedField:['password']}) // use encryptedfield to specife which field you like to 
+const secret ="abcdefghijklmnopqrstuvwxyz"
+userSchema.plugin(encrypt,{secret:secret,encryptedField:['password']}) // use encryptedfield to specife which field you like to 
 
 const user = new mongoose.model("User", userSchema)
-
-
 
 app.get("/", function (req, res) {
     res.render("home")
