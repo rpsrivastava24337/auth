@@ -1,4 +1,5 @@
 //jshint esversion:6
+import 'dotenv/config'
 import ejs from "ejs";
 import express from "express"; ``
 import bodyParser from "body-parser";
@@ -21,7 +22,7 @@ const userSchema = new mongoose.Schema({ // set new mongoose schema for encrypti
 });
 
 const secret = "abcdefghijklmnopqrstuvwxyz";
-userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password']}) // use encryptedfield to specife which field you like to encrypt
+userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password']}) // use encryptedfield to specife which field you like to encrypt
 
 const user = new mongoose.model("User", userSchema)
 
