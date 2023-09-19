@@ -3,7 +3,7 @@ import ejs from "ejs";
 import express from "express"; ``
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
-//import encrypt from 'mongoose-encryption'; 
+import encrypt from 'mongoose-encryption';
 
 const app = express()
 
@@ -20,8 +20,8 @@ const userSchema = new mongoose.Schema({ // set new mongoose schema for encrypti
     password: String
 });
 
-const secret ="abcdefghijklmnopqrstuvwxyz"
-userSchema.plugin(encrypt,{secret:secret,encryptedField:['password']}) // use encryptedfield to specife which field you like to 
+const secret = "abcdefghijklmnopqrstuvwxyz";
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password']}) // use encryptedfield to specife which field you like to encrypt
 
 const user = new mongoose.model("User", userSchema)
 
@@ -52,15 +52,15 @@ app.post("/login", async function (req, res) {
     const name = req.body.username
     const pass = req.body.password
 
-    user.findOne({ email: name }).then(( founduser) => {
-   
-        if(founduser){
-            if(founduser.password===pass){
+    user.findOne({ email: name }).then((founduser) => {
+
+        if (founduser) {
+            if (founduser.password === pass) {
                 res.render("secrets")
             }
         }
 
-      
+
     })
 })
 
