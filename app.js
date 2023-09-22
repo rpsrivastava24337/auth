@@ -10,12 +10,12 @@ import passportLocalMongoose from 'passport-local-mongoose';
 import GoogleStrategy from 'passport-google-oauth20';
 import findOrCreate from 'mongoose-findorcreate';
 
- 
+
 const app = express()
 
 app.use(express.static("public"))// The express.static middleware function is used to expose a directory or a file to a particular URL so its contents can be publicly accessed. In this case, the assets directory is exposed to the /assets URL.
 app.set('view engine', 'ejs');//View engines allow us to render web pages using template files. 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: "Our little secret.",
     resave: false,
@@ -30,7 +30,8 @@ mongoose.connect("mongodb://127.0.0.1/userDB", { useNewUrlParser: true, useUnifi
 const userSchema = new mongoose.Schema({ // set new mongoose schema for encryption
     email: String,
     password: String,
-    googleId: String
+    googleId: String,
+    secret: String
 });
 
 userSchema.plugin(passportLocalMongoose)
@@ -40,22 +41,20 @@ const user = new mongoose.model("User", userSchema)
 
 passport.use(user.createStrategy());
 
-passport.serializeUser(function(user, done) { done(null, user) });
-passport.deserializeUser(function(user, done) { done(null, user) });
+passport.serializeUser(function (user, done) { done(null, user) });
+passport.deserializeUser(function (user, done) { done(null, user) });
 
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/google/secrets",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
-  },
-  function(accessToken, refreshToken, profile, cb) {
-    console.log(profile);
-
-    user.findOrCreate({ googleId: profile.id }, function (err, user) {
-      return cb(err, user);
-    });
-  }
+},
+    function (accessToken, refreshToken, profile, cb) {
+        user.findOrCreate({ googleId: profile.id }, function (err, user) {
+            return cb(err, user);
+        });
+    }
 ));
 
 app.get("/", function (req, res) {
@@ -81,15 +80,57 @@ app.get("/login", function (req, res) {
 app.get("/register", function (req, res) {
     res.render("register")
 })
+////////////////////////////////////////////////////////////////////
 
-app.get("/secrets", function (req, res) {
+
+app.get("/secrets", async function (req, res) {
+    try {
+        await user.find({ "secret": { $ne: null }}).then(function (foundUsers,err) {
+            res.render("secrets", { usersWithSecrets: foundUsers });
+        })
+    }
+    catch (err) {
+        console.log(err)
+    }
+});
+
+app.get("/submit", function (req, res) {
     if (req.isAuthenticated()) {
-        res.render("secrets");
+        res.render("submit");
     } else {
         res.redirect("/login");
     }
 });
 
+app.post("/submit", async function (req, res) {
+    const submittedSecret = req.body.secret;
+
+    //Once the user is authenticated and their session gets saved, their user details are saved to req.user.
+    // console.log(req.user.id);
+
+    await user.findById(req.user._id).then(function (foundUser, err) {
+        try {
+            if (foundUser) {
+                foundUser.secret = submittedSecret;
+                foundUser.save().then(function () {
+                    res.redirect("/secrets");
+                })
+
+            }
+            else {
+                throw ("this is" + err)
+            }
+        }
+        catch (err) {
+            console.log(err)
+        }
+    });
+
+
+
+});
+
+/////////////////////////////////////////////////////////////////////////////////////////////
 app.get('/logout', function (req, res, next) {
     req.logout(function (err) {
         if (err) { return next(err); }
